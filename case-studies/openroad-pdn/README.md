@@ -4,11 +4,13 @@
 
 [Issue #11538](https://github.com/The-OpenROAD-Project/OpenROAD/issues/11538)
 · [PR #11539](https://github.com/The-OpenROAD-Project/OpenROAD/pull/11539)
-· [Submitted patch](https://github.com/The-OpenROAD-Project/OpenROAD/pull/11539/files)
+· [Merged patch](https://github.com/The-OpenROAD-Project/OpenROAD/pull/11539/files)
 
-**Status, September 27, 2026:** submitted and open, pending upstream review.
-DCO passes; upstream build/lint workflows await maintainer approval. Local
-verification is separate from upstream CI and acceptance.
+**Updated November 3, 2026:** merged into OpenROAD `master` on November 2
+through PR #11539. The upstream merge commit is
+[`ef9b2931350bd98c18cc9ca97ad56808cc04e6d1`](https://github.com/The-OpenROAD-Project/OpenROAD/commit/ef9b2931350bd98c18cc9ca97ad56808cc04e6d1).
+This identifies the integrated source; inclusion in a numbered release has
+not been verified. The measurements below retain their original tested revisions.
 
 ## What failed?
 
@@ -35,7 +37,7 @@ round a small negative margin to an apparently legal zero.
 
 ## What changed?
 
-I submitted a focused correction in `src/pdn/src/via.cpp`: use the default
+The merged correction changes `src/pdn/src/via.cpp`: use the default
 independently for each landing **only when no applicable overriding rule exists**,
 and preserve negative margins with floor division and signed grid snapping.
 Existing override selection and legal landing-extension attempts remain.
@@ -44,25 +46,52 @@ This follows the default/override distinction in the
 
 ## How was it tested?
 
-The new Tcl regressions inspect actual OpenDB cut and landing rectangles,
+The original Tcl regressions inspect actual OpenDB cut and landing rectangles,
 independently of PDN's fit predicate. Both defect assertions fail on the original
 complete executable and pass with the correction. The valid control's DEF and
 geometry tables are byte-identical. The existing stacked-via override test
 passes unchanged.
 
-The final local PDN suite passes **207/207 tests**, including three new tests.
-This was a fresh execution using previously built, verified binaries whose
-production-source equivalence was checked after formatting; no fresh Bazel
-build is claimed. Eleven expected-output pairs were reviewed for physical
-consequences, individually documented in the PR. C++, Tcl and Bazel formatting
-checks pass locally.
+The September local PDN suite passed **207/207 tests**, including three new
+tests. That run used previously built, verified binaries with checked
+production-source equivalence; it was not a fresh Bazel build. Its pinned
+reproduction and measured figure remain below.
 
-### Reproduce
+The later **October 24 validation** added native C++ regressions in the
+existing PDN test targets:
+
+- **289/289 Bazel targets passed in three fresh executions each**, covering
+  PDN, PSM, RAM and `repair_setup_reroute1`, with test-result reuse disabled.
+- With the same via-test source, unpatched upstream passed **205/211**;
+  the correction passed **211/211**. The six defect tests failed in all three
+  unpatched runs.
+- With the same connection-test source, unpatched upstream passed **74/77**;
+  the correction passed **77/77**. The three enclosure-rejection tests failed
+  in all three unpatched runs.
+
+Positive controls covered valid overrides, locked/pinned containment, tapered
+stacks, legal landing extension, obstruction ripup and direction-dependent
+widening. Independent OpenDB rectangle checks also identified five undersized
+connection fixtures; adequate-landings controls and rejection regressions
+preserve both behaviors.
+
+These results belong to tested head
+`0eaf08712f2bee52fbbd2493ed67cd9f53d559e6`, incorporating upstream
+`6f3f28cc85407d71ba64a550cca194d8a6a01c1c`, not a new execution of the November
+merge commit. See the [public validation record](https://github.com/The-OpenROAD-Project/OpenROAD/pull/11539)
+and [October reproduction instructions](https://github.com/MahmoudNedalSubLaban/OpenROAD/blob/0eaf08712f2bee52fbbd2493ed67cd9f53d559e6/src/pdn/test/generated_via_enclosure/README.md).
+Test counts describe regression targets, not independent chip designs.
+
+### Reproduce the original demonstration
+
+These September source pins reproduce the original small geometry cases and
+figure. They are intentionally unchanged; the corrected revision here is an
+earlier implementation, not the final upstream merge.
 
 Build two complete OpenROAD executables with matching dependencies using the
 [upstream build instructions](https://github.com/The-OpenROAD-Project/OpenROAD/blob/80c6be93c28244f9f72840852a667daef764a4ff/docs/user/Build.md):
 
-| Version | Source commit |
+| Demonstration arm | Source commit |
 | --- | --- |
 | Original | `80c6be93c28244f9f72840852a667daef764a4ff` |
 | Corrected | `6b3d456caab98deb34a1511327299d42fbcf9065` |
@@ -91,9 +120,19 @@ also contains direct commands and interpretation. To regenerate this figure:
 
 ## What remains unresolved?
 
-Rejecting an illegal via does **not** guarantee a replacement connection. One
-already-disconnected existing test network reports more disconnected shapes
-after rejection. DFT68's separate `PDN-0179` construction failure is unresolved.
-No full-chip PPA improvement, universal PDN repair, process DRC or electrical
-sign-off is claimed. Upstream CI approval and maintainer review remain pending;
-the live PR is the source of truth for acceptance.
+Rejecting an illegal via does **not** guarantee a replacement connection.
+Already-disconnected test networks can report more disconnected shapes after
+illegal links are rejected. This fix does not resolve the separate DFT68
+`PDN-0179` construction failure documented in the PR, or establish universal
+PDN repair. No full-chip PPA improvement, process DRC, IR-drop, electromigration
+or electrical sign-off is claimed.
+
+## Related checker work
+
+[PR #11698](https://github.com/The-OpenROAD-Project/OpenROAD/pull/11698) addresses
+a separate detailed-routing checker issue: importing individual via figures
+outside a worker's context can produce a false spacing marker. The proposed
+fix filters imported figures by that context and tests the existing
+`FlexGCWorker` fixture directly. **It remains open as of November 3, 2026**;
+it is not part of the merged PDN fix. Neither contribution is a claim of
+improved macro placement or full-chip routing quality.
