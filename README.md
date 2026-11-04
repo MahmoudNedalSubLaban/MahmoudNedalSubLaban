@@ -5,4 +5,4 @@ experience as an electronics and RF engineer at a medical startup.
 
 My master's thesis focuses on automated VLSI placement and is currently in progress.
 
-I have contributed to [OpenROAD](https://github.com/The-OpenROAD-Project/OpenROAD/pull/11539), an open-source physical-design tool.
+I have contributed to [OpenROAD](https://github.com/The-OpenROAD-Project/OpenROAD/pull/11539), an open-source physical-design tool, by fixing a problem in [malformed generated vias](https://github.com/MahmoudNedalSubLaban/MahmoudNedalSubLaban/tree/main/case-studies/openroad-pdn).
